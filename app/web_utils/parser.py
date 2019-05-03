@@ -32,8 +32,6 @@ def get_film_list_by_url(url):
         html = response.read()
         html = html.decode('utf-8')
         tree = html_parser.parse(StringIO(html))
-        with open('b.html', 'w', encoding='utf-8') as f:
-            f.write(html)
         film_data = tree.xpath('//div[@class="element"]')
         film_data += tree.xpath('//div[@class="element width_2"]')
         film_data += tree.xpath('//div[@class="item"]')

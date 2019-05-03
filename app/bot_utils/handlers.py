@@ -17,7 +17,8 @@ def get_name(message):
 
 @bot.message_handler(commands=['help'])
 def handle_help(message):
-    bot.send_message(message.chat.id, '/search - поиск фильма')
+    bot.send_message(message.chat.id, '/search - поиск фильма\n'
+                                      '/new - новинки')
 
 
 @bot.message_handler(commands=['new'])
