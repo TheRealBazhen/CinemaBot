@@ -1,5 +1,6 @@
 from app import bot, Database, parser, config
 import telebot
+import random
 
 
 @bot.message_handler(commands=['start'])
@@ -43,6 +44,8 @@ def get_search_type(message):
         bot.send_message(message.chat.id, message_texts[message.text],
                          reply_markup=markup)
         bot.register_next_step_handler(message, handlers[message.text])
+    elif message.text == 'Автоматически':
+        handle_preferenced(message)
     else:
         handle_all(message, markup)
 
@@ -72,12 +75,17 @@ def buttons_callback(call):
         cur_pos = db.get_cur_search_pos(call.message.chat.id)
         search_data = db.get_search_data(call.message.chat.id)
     new_pos = cur_pos
+    grade = 0
     if call.data == 'back':
         if cur_pos >= 1:
             new_pos -= 1
     elif call.data == 'fwd':
         if cur_pos < len(search_data) - 1:
             new_pos += 1
+    elif call.data == 'like':
+        grade = 1
+    elif call.data == 'dis':
+        grade = -1
     if new_pos != cur_pos:
         with Database() as db:
             db.change_cur_search_pos(call.message.chat.id, new_pos)
@@ -91,6 +99,10 @@ def buttons_callback(call):
             format(search_data[new_pos][0], search_data[new_pos][1])
         bot.edit_message_text(msg, call.message.chat.id,
                               call.message.message_id, reply_markup=keyboard)
+    elif grade != 0:
+        title, rating, dir_id = search_data[cur_pos]
+        with Database() as db:
+            db.set_grade(call.message.chat.id, title, dir_id, grade)
 
 
 def handle_author_name(message):
@@ -109,6 +121,19 @@ def handle_genre(message):
     else:
         code = config['genre_codes'][genre]
         films_list = parser.get_film_list_by_genre(code)
+        obtain_films_list(message, films_list)
+
+
+def handle_preferenced(message):
+    with Database() as db:
+        pref = db.get_preferenced_directors(message.chat.id)
+    if len(pref) < 1:
+        bot.send_message(message.chat.id, 'Не знаю, что посоветовать(')
+    else:
+        films_list = []
+        for dir in pref:
+            films_list += parser.get_film_list_by_director_id(dir)
+        random.shuffle(films_list)
         obtain_films_list(message, films_list)
 
 

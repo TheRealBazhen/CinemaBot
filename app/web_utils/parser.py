@@ -35,14 +35,17 @@ def get_film_list_by_url(url):
         film_data = tree.xpath('//div[@class="element"]')
         film_data += tree.xpath('//div[@class="element width_2"]')
         films = []
-        for i, f in enumerate(film_data):
-            div = f.xpath('//div[@class="right"]/div')
+        ratings = tree.xpath('//div[@class="right"]/div')
+        titles = tree.xpath('//div[@class="info"]/p[@class="name"]/a')
+        dir_ids = tree.xpath('//div[@class="info"]/span/i/a')
+        for i in range(len(film_data)):
             rating = '0.0'
-            if len(div) > i:
-                rating = div[i].text
-            div = f.xpath('//div[@class="info"]/p[@class="name"]/a')
-            title = div[i].text
-            films.append((title, rating))
+            if len(ratings) > i:
+                rating = ratings[i].text
+            title = titles[i].text
+            href = dir_ids[i].attrib['href'].split('/')
+            dir_id = href[2]
+            films.append((title, rating, dir_id))
         return films
     except Exception as e:
         print('Error getting html: ' + str(e))

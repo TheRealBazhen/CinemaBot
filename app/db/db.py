@@ -18,13 +18,24 @@ class Database:
                            chat_id VARCHAR(20) NOT NULL,
                            title VARCHAR(30) NOT NULL,
                            rating VARCHAR(6) NOT NULL,
+                           director_id VARCHAR(10) NOT NULL,
                            FOREIGN KEY (chat_id) REFERENCES users(chat_id),
                            CONSTRAINT pr_key PRIMARY KEY(no, chat_id)
                        );''',
                     '''CREATE TABLE cur_search_pos(
                            no INT NOT NULL,
                            chat_id VARCHAR(20) NOT NULL,
-                           FOREIGN KEY (no, chat_id) REFERENCES search_data(no, chat_id)
+                           FOREIGN KEY (no, chat_id) 
+                               REFERENCES search_data(no, chat_id)
+                       );''',
+                    '''CREATE TABLE preferences(
+                           chat_id VARCHAR(20),
+                           title VARCHAR(30) NOT NULL,
+                           director_id VARCHAR(10) NOT NULL,
+                           grade INT NOT NULL,
+                           FOREIGN KEY (chat_id) REFERENCES users(chat_id),
+                           CONSTRAINT pr_key1 
+                               PRIMARY KEY(chat_id, title, director_id)
                        );''']
         try:
             self.cursor.executescript(''.join(cmd_list))
@@ -69,12 +80,12 @@ class Database:
 
     def insert_search_data(self, chat_id, search_data):
         cmd = '''
-            INSERT INTO search_data VALUES ((?), (?), (?), (?));
+            INSERT INTO search_data VALUES ((?), (?), (?), (?), (?));
             '''
 
         try:
-            for no, (title, rating) in enumerate(search_data):
-                self.cursor.execute(cmd, [no, str(chat_id), title, rating])
+            for no, (title, rating, dir_id) in enumerate(search_data):
+                self.cursor.execute(cmd, [no, str(chat_id), title, rating, dir_id])
             self.cursor.execute("INSERT INTO cur_search_pos"
                                 " VALUES (0, (?));", [str(chat_id)])
             self.connection.commit()
@@ -104,7 +115,7 @@ class Database:
 
     def get_search_data(self, chat_id):
         cmd = '''
-            SELECT title, rating
+            SELECT title, rating, director_id
             FROM search_data
             WHERE chat_id = (?)
             ORDER BY no;
@@ -115,6 +126,35 @@ class Database:
         except Exception as e:
             print(str(e))
             return None
+
+    def set_grade(self, chat_id, title, director, grade):
+        try:
+            self.cursor.execute("INSERT INTO preferences "
+                                "VALUES ((?), (?), (?), (?));",
+                                [str(chat_id), title, str(director),
+                                 int(grade)])
+        except Exception as e:
+            try:
+                self.cursor.execute("UPDATE preferences "
+                                    "SET grade = (?)"
+                                    "WHERE chat_id=(?) AND title=(?);",
+                                    [int(grade), str(chat_id), title]);
+            except Exception as e:
+                print(str(e))
+        finally:
+            self.connection.commit()
+
+    def get_preferenced_directors(self, chat_id):
+        try:
+            self.cursor.execute("SELECT director_id "
+                                "FROM preferences "
+                                "GROUP BY chat_id, director_id "
+                                "HAVING chat_id=(?) AND SUM(grade) > 0;",
+                                [str(chat_id)])
+            return [a[0] for a in self.cursor.fetchall()]
+        except Exception as e:
+            print(e)
+            return []
 
     def close(self):
         self.connection.close()
