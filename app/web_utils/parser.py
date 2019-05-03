@@ -32,12 +32,18 @@ def get_film_list_by_url(url):
         html = response.read()
         html = html.decode('utf-8')
         tree = html_parser.parse(StringIO(html))
+        with open('b.html', 'w', encoding='utf-8') as f:
+            f.write(html)
         film_data = tree.xpath('//div[@class="element"]')
         film_data += tree.xpath('//div[@class="element width_2"]')
+        film_data += tree.xpath('//div[@class="item"]')
         films = []
         ratings = tree.xpath('//div[@class="right"]/div')
+        ratings += tree.xpath('//div[@class="info"]/div[@class="rating"]/span')
         titles = tree.xpath('//div[@class="info"]/p[@class="name"]/a')
+        titles += tree.xpath('//div[@class="info"]/div[@class="name"]/a')
         dir_ids = tree.xpath('//div[@class="info"]/span/i/a')
+        dir_ids += tree.xpath('//div[@class="info"]/div/span/a')
         for i in range(len(film_data)):
             rating = '0.0'
             if len(ratings) > i:
@@ -61,4 +67,9 @@ def get_film_list_by_director_id(director_id):
 
 def get_film_list_by_genre(genre_code):
     url = config['parser']['genre_url'].format(genre_code)
+    return get_film_list_by_url(url)
+
+
+def get_new_film_list():
+    url = config['parser']['new_url']
     return get_film_list_by_url(url)

@@ -20,6 +20,12 @@ def handle_help(message):
     bot.send_message(message.chat.id, '/search - поиск фильма')
 
 
+@bot.message_handler(commands=['new'])
+def handle_new(message):
+    films_list = parser.get_new_film_list()
+    obtain_films_list(message, films_list)
+
+
 @bot.message_handler(commands=['search'])
 def handle_search(message):
     keyboard = telebot.types.ReplyKeyboardMarkup()
@@ -45,7 +51,7 @@ def get_search_type(message):
                          reply_markup=markup)
         bot.register_next_step_handler(message, handlers[message.text])
     elif message.text == 'Автоматически':
-        handle_preferenced(message)
+        handle_preferenced(message, markup)
     else:
         handle_all(message, markup)
 
@@ -53,7 +59,8 @@ def get_search_type(message):
 def obtain_films_list(message, films_list):
     if not films_list:
         bot.send_message(message.chat.id, 'Что-то пошло не так. '
-                                          'Попробуй позже')
+                                          'Попробуй позже (можно попробовать '
+                                          'поменять VPN)')
         return
     with Database() as db:
         db.clear_search_data(message.chat.id)
@@ -124,11 +131,12 @@ def handle_genre(message):
         obtain_films_list(message, films_list)
 
 
-def handle_preferenced(message):
+def handle_preferenced(message, markup):
     with Database() as db:
         pref = db.get_preferenced_directors(message.chat.id)
     if len(pref) < 1:
-        bot.send_message(message.chat.id, 'Не знаю, что посоветовать(')
+        bot.send_message(message.chat.id, 'Не знаю, что посоветовать(',
+                         reply_markup=markup)
     else:
         films_list = []
         for dir in pref:

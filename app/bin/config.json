@@ -38,6 +38,7 @@
     },
     "parser": {
         "genre_url": "https://www.kinopoisk.ru/s/type/film/list/1/m_act[genre][0]/{}/m_act[genre_and]/on/",
-        "director_url": "https://www.kinopoisk.ru/s/"
+        "director_url": "https://www.kinopoisk.ru/s/",
+        "new_url": "https://www.kinopoisk.ru/afisha/new/city/1/"
     }
 }
